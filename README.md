@@ -1,35 +1,69 @@
-# 🧠 serverless-mcp
+# 🧠 Serverless Game Search Platform
 
-A serverless, container-native search platform that integrates AI-based intent parsing using OpenAI and GameBrain's MCP protocol — all orchestrated through a modular gateway in Go.
+A modular, AI-powered, **serverless search architecture** for video games — powered by ElasticSearch, OpenAI, and GameBrain's MCP protocol. This platform intelligently routes user queries like _"Find me games like Baldur’s Gate"_ to the appropriate internal service (`/search`, `/similar`, `/suggest`) using LLMs or MCP-based inference.
 
-## 🚀 Features
+---
 
-- **Serverless Functions**: `search`, `similar`, and `suggest` endpoints powered by Node.js
-- **Intent Parsing**: Fallback chain using OpenAI → GameBrain MCP → Static JSON
-- **Vector Search**: Persistent Elasticsearch store (with volume mount)
-- **MCP Protocol**: Seamless connection to GameBrain’s remote API via `npx mcp-remote`
-- **Go API Gateway**: Intelligent routing based on LLM intent classification
-- **Containerized Infrastructure**: Fully Dockerized with multi-service `docker-compose`
-- **Environment Isolation**: .env driven config without leaking sensitive keys
+## 🚀 Overview
 
-## 🛠️ Stack
+This project demonstrates a **complete serverless search system** that:
 
-- **Go** – Gateway logic and MCP fallback routing
-- **Node.js** – Search function handlers
-- **Elasticsearch** – Vector index persistence
-- **Docker Compose** – Service orchestration
-- **MCP Protocol** – Machine/Agent intent parsing via GameBrain API
-- **OpenAI** – Natural language understanding (intent → JSON)
+- Extracts **user intent** via ChatGPT (OpenAI) or GameBrain's MCP agent
+- Routes queries to the right microservice (`/search`, `/similar`, or `/suggest`)
+- Uses **ElasticSearch** as the backend index
+- Is fully containerized and orchestrated using **Docker Compose**
 
-## 🧪 Running Locally
+---
 
-```bash
-# Build and start all containers
-docker-compose build
-docker-compose up -d
+## 📦 Architecture
+
+                         +----------------+
+                         |   User Query   |
+                         +--------+-------+
+                                  |
+                       ┌──────────▼──────────┐
+                       |   Gateway (GoLang)  |
+                       └──────────┬──────────┘
+                 ┌───────────────┴───────────────┐
+                 |                               |
+    +------------▼-------------+     +-----------▼------------+
+    |   OpenAI Chat Completion |     |   GameBrain MCP Fallback|
+    |   (Intent Extraction)    |     |   (via `npx mcp-remote`) |
+    +------------+-------------+     +-----------+-------------+
+                 |                               |
+         ┌───────▼────────┐       ┌──────────────▼─────────────┐
+         | JSON Intent    |       | JSON Intent from MCP Agent |
+         └───────┬────────┘       └──────────────┬─────────────┘
+                 |                               |
+   ┌─────────────▼────────────┐      ┌───────────▼──────────┐
+   | /search (full text)     |      | /similar (title match)|
+   | /suggest (autocomplete) |      |                       |
+   | Node.js + ElasticSearch |      | Node.js + ElasticSearch|
+   └─────────────┬───────────┘      └───────────┬───────────┘
+                 ▼                               ▼
+         +---------------+               +-----------------+
+         |  ElasticSearch|<-------------►| Init Bootstrap  |
+         +---------------+               +-----------------+
+
+---
+
+## 🔧 Stack & Tools
+
+| Component            | Tech Used                        |
+|---------------------|----------------------------------|
+| Gateway             | GoLang + godotenv                |
+| Intent Routing      | OpenAI (ChatGPT), GameBrain MCP  |
+| Fallback Execution  | `npx mcp-remote` subprocess      |
+| Search Backend      | ElasticSearch                    |
+| Microservices       | Node.js + Express.js             |
+| Deployment          | Docker + Docker Compose          |
+| Environment Config  | `.env` (with API keys)           |
+
+---
+
+## 🧠 Intelligent Query Routing
+
+### User Query:
+```json
+{ "query": "Find me games like Baldur's Gate" }
 ```
-
-# Test via curl
-curl -X POST http://localhost:8080/mcp \
-  -H "Content-Type: application/json" \
-  -d '{"query": "Find me games like Baldur'\''s Gate"}'
