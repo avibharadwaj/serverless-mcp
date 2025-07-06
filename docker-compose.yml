@@ -1,0 +1,66 @@
+version: '3.8'
+services:
+  elasticsearch:
+    image:  docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - 9200:9200
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+  
+  mcp-gamebrain:
+    build: .
+    command: sh ./mcp-gamebrain.sh
+    environment:
+      - GAMEBRAIN_API_KEY=${GAMEBRAIN_API_KEY}
+    
+  gateway:
+    build: ./infra
+    ports:
+      - 8080:8080
+    depends_on:
+      - elasticsearch
+      - mcp-gamebrain
+    env_file: .env
+  
+  function-search:
+    build: ./functions/search
+    ports:
+      - 3000:3000
+    environment:
+      - ES_HOST=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+
+  function-similar:
+    build: ./functions/similar
+    ports:
+      - 3001:3001
+    environment:
+      - ES_HOST=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+
+  function-suggest:
+    build: ./functions/suggest
+    ports:
+      - 3002:3002
+    environment:
+      - ES_HOST=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+  
+  init-es:
+    build:
+      context: ./bootstrap
+    depends_on:
+      - elasticsearch
+    environment:
+      - ES_HOST=http://elasticsearch:9200
+      - GAMEBRAIN_API_KEY=${GAMEBRAIN_API_KEY}
+    command: sh ./init-elasticsearch.sh
+
+volumes:
+  esdata:

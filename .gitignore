@@ -1,0 +1,7 @@
+.env
+infra/.env
+functions/search/node_modules/
+functions/similar/node_modules/
+functions/suggest/node_modules/
+node_modules/
+

@@ -1,0 +1,1 @@
+npx -y mcp-remote https://api.gamebrain.co/v1/mcp?api-key=$GAMEBRAIN_API_KEY
